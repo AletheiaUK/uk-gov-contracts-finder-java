@@ -1,0 +1,15 @@
+[tools]
+java = "17"
+gradle = "latest"
+
+[env]
+# Gradle optimization settings
+GRADLE_OPTS = "-XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+
+[tasks.build]
+description = "Build the JAR library"
+run = "gradle build"
+
+[tasks.clean]
+description = "Clean build artifacts"
+run = "gradle clean"
