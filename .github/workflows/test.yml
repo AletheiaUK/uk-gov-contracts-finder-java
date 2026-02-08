@@ -1,0 +1,105 @@
+name: Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'src/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle.properties'
+      - '.github/workflows/test.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup mise
+        uses: jdx/mise-action@v2
+        with:
+          cache: true
+
+      - name: Run tests
+        id: test
+        run: |
+          mise exec -- gradle test --info 2>&1 | tee test-output.txt
+          echo "TEST_OUTPUT<<EOF" >> $GITHUB_ENV
+          cat test-output.txt >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Parse test results
+        id: parse
+        if: always()
+        run: |
+          # Extract test results using gradle output
+          TEST_SUMMARY=$(mise exec -- gradle test --info 2>&1 | grep -E "(passed|failed|skipped)" | tail -1)
+          
+          # Get detailed results
+          TOTAL_TESTS=$(cat test-output.txt | grep -oP '(?<=Executed )d+(?= test)' | head -1)
+          PASSED_TESTS=$(cat test-output.txt | grep -oP 'd+(?= passed)' | head -1)
+          FAILED_TESTS=$(cat test-output.txt | grep -oP 'd+(?= failed)' | head -1)
+          SKIPPED_TESTS=$(cat test-output.txt | grep -oP 'd+(?= skipped)' | head -1)
+          
+          # Set defaults if not found
+          TOTAL_TESTS=${TOTAL_TESTS:-0}
+          PASSED_TESTS=${PASSED_TESTS:-0}
+          FAILED_TESTS=${FAILED_TESTS:-0}
+          SKIPPED_TESTS=${SKIPPED_TESTS:-0}
+          
+          echo "total_tests=$TOTAL_TESTS" >> $GITHUB_OUTPUT
+          echo "passed_tests=$PASSED_TESTS" >> $GITHUB_OUTPUT
+          echo "failed_tests=$FAILED_TESTS" >> $GITHUB_OUTPUT
+          echo "skipped_tests=$SKIPPED_TESTS" >> $GITHUB_OUTPUT
+
+      - name: Generate test report summary
+        if: always()
+        run: |
+          cat > test-summary.md << 'SUMMARY'
+          # Test Results Summary
+          
+          ## Overview
+          - **Total Tests**: ${{ steps.parse.outputs.total_tests }}
+          - **Passed**: ✅ ${{ steps.parse.outputs.passed_tests }}
+          - **Failed**: ❌ ${{ steps.parse.outputs.failed_tests }}
+          - **Skipped**: ⏭️ ${{ steps.parse.outputs.skipped_tests }}
+          
+          ## Test Status
+          ```
+          ${{ env.TEST_OUTPUT }}
+          ```
+          
+          ## Gradle Output
+          For detailed build output, check the workflow logs.
+          SUMMARY
+          
+          cat test-summary.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            build/test-results/
+            test-output.txt
+          retention-days: 30
+
+      - name: Comment on PR with results
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const testSummary = fs.readFileSync('test-summary.md', 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: testSummary
+            });
