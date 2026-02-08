@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          release-type: java
+          package-name: contracts-finder
+          default-branch: main
+          changelog-path: CHANGELOG.md
+          version-file: gradle.properties
+          include-v-in-tag: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/checkout@v4
+        if: ${{ steps.release.outputs.release_created }}
+        with:
+          ref: ${{ steps.release.outputs.tag_name }}
+
+      - name: Set up Java
+        if: ${{ steps.release.outputs.release_created }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build Release
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          ./gradlew clean build
+          ls -lh build/libs/
+
+      - name: Upload Release Assets
+        if: ${{ steps.release.outputs.release_created }}
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            build/libs/contracts-finder-*.jar
+          tag_name: ${{ steps.release.outputs.tag_name }}
+          body: ${{ steps.release.outputs.body }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
