@@ -1,0 +1,118 @@
+# goosehints - Repository Standards
+# UK Government Contracts Finder Java Library
+
+## Quick Overview
+- **Language**: Java (version managed by `mise`) - baseline on currently preferred LTS version of OpenJDK
+- **Build Tool**: Gradle (version managed by `mise`)
+- **Dependencies**: Target of ZERO external dependencies - only include if a requirement is going to introduce new code of significant complexity and there is already a well established library that solves the issue. User approval is REQUIRED prior to including external libraries.
+- **JAR Size**: Optimise to be as small as possible, while maintaining readability of source code
+- **Tests**: All key functionality must be covered by Unit Tests
+- **Versioning**: Semantic Versioning with release-please automation
+- **CI/CD**: GitHub Actions with jdx-mise-action
+
+## Key Standards
+
+### Code Quality
+- Compiler flags: `-Xlint:all -parameters -release 17`
+- Full JavaDoc on public APIs
+- Code style: 4-space indentation, LF endings, UTF-8 (enforced via .editorconfig)
+- Exception handling: Custom exception hierarchy (ContractsFinderException, HttpException)
+- Design patterns: Fluent builders, AutoCloseable resources
+
+### Dependencies
+- **Main Library**: Only JDK standard library
+- **HTTP**: java.net.http.HttpClient (HTTP/2, built-in)
+- **JSON**: Regex-based parser (no external library)
+- **Testing**: JUnit 5 (test-only dependency)
+
+### Build & Testing
+- Build: `gradle build` (~1 second)
+- Test: `gradle test` with full logging
+- JAR optimization: Excluded metadata files, selective manifest entries
+- Incremental compilation and build caching enabled
+
+### Version Control & Releases
+- **Commits**: Conventional Commits standard (feat:, fix:, docs:, etc.)
+- **Branching**: main (releases), develop (development)
+- **Releases**: Fully automated via release-please (no manual tagging)
+- **Version Source**: gradle.properties (single source of truth)
+- **Changelog**: CHANGELOG.md (Keep a Changelog format, auto-updated)
+
+### GitHub Actions Workflows
+
+**release.yml** - Triggered on push to main
+- Uses jdx-mise-action for environment setup
+- Runs release-please for automated releases
+- Builds JAR and uploads artifacts
+- Tool caching enabled (50-70% faster)
+
+**test.yml** - Triggered on PR to main/develop
+- Uses jdx-mise-action for environment setup
+- Runs `gradle test --info`
+- Outputs results to job summary and PR comment
+- Uploads test artifacts (30-day retention)
+- Tool caching enabled
+
+### Tool Management
+- **mise.toml**: Single source of truth for tool versions
+- **Current Tools**: Java 17, Gradle latest
+- **CI/CD Integration**: jdx-mise-action@v2 in all workflows
+- **Caching**: Enabled by default (cache invalidates on mise.toml changes)
+
+### Project Structure
+```
+src/main/java/com/aletheia/contractsfinder/
+  ├── ContractsFinderClient.java (interface)
+  ├── ContractsFinderClientImpl.java (implementation)
+  ├── SearchCriteria.java (fluent builder)
+  ├── Contract.java, Notice.java (data models)
+  ├── http/ (HTTP layer with HttpClient, URL utils, JSON parser)
+  └── module-info.java (JPMS configuration)
+
+src/test/java/
+  ├── ContractsFinderClientImplTest.java (8 tests)
+  └── HttpUtilTest.java (5 tests)
+
+.github/workflows/
+  ├── release.yml (automated releases)
+  └── test.yml (PR testing)
+
+docs/
+  ├── README.md (user guide)
+  ├── QUICKREF.md (quick reference)
+  ├── CONTRIBUTING.md (development guidelines)
+  └── RELEASE_PROCESS.md (release guide)
+```
+
+## Development Workflow
+1. Create feature branch from `main`
+2. Write code following standards above
+3. Commit with conventional commits format
+4. When requested by the user, push feature branch to create PR against `main`
+5. test.yml automatically runs tests
+6. View results in job summary or PR comment
+7. Merge PR → release.yml handles release on main
+
+## Key Files
+- `build.gradle.kts` - JAR optimization, zero dependencies
+- `mise.toml` - Tool versions (Java 17, Gradle latest)
+- `release-please-config.json` - Semantic versioning rules
+- `.editorconfig` - Code style enforcement
+- `module-info.java` - JPMS module configuration
+
+## Testing Standards
+- Framework: JUnit 5
+- Execution: Via test.yml on PR or `gradle test` locally
+- Coverage: Unit tests for core API and HTTP utilities
+- Pass Rate: 100% is MANDATORY
+
+## Documentation Standards
+- Format: Markdown for guides, JavaDoc for APIs
+- Audiences: Users (README), developers (QUICKREF, CONTRIBUTING), maintainers (RELEASE_PROCESS)
+- Completeness: Always include quick start, examples, and troubleshooting
+
+## References
+- Conventional Commits: https://www.conventionalcommits.org/
+- Semantic Versioning: https://semver.org/
+- release-please: https://github.com/googleapis/release-please
+- jdx-mise-action: https://github.com/jdx/mise-action
