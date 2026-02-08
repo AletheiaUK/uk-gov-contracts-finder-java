@@ -20,20 +20,23 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up Java ${{ matrix.java-version }}
-        uses: actions/setup-java@v4
+
+      - name: Setup mise
+        uses: jdx/mise-action@v2
         with:
-          java-version: ${{ matrix.java-version }}
-          distribution: 'temurin'
-          cache: 'gradle'
-      
+          cache: true
+
+      - name: Override Java version
+        run: |
+          echo "JAVA_VERSION=${{ matrix.java-version }}" >> $GITHUB_ENV
+          mise install java@${{ matrix.java-version }}
+
       - name: Run tests
-        run: ./gradlew test
-      
+        run: mise exec -- gradle test
+
       - name: Build JAR
-        run: ./gradlew build
-      
+        run: mise exec -- gradle build
+
       - name: Check JAR size
         run: |
           JAR_SIZE=$(ls -lh build/libs/contracts-finder-*.jar | awk '{print $5}')
@@ -41,7 +44,7 @@ jobs:
           if [ "$JAR_SIZE" != "20K" ]; then
             echo "Warning: JAR size changed to $JAR_SIZE (expected 20K)"
           fi
-      
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

@@ -13,6 +13,13 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup mise
+        uses: jdx/mise-action@v2
+        with:
+          cache: true
+
       - uses: googleapis/release-please-action@v4
         id: release
         with:
@@ -29,17 +36,16 @@ jobs:
         with:
           ref: ${{ steps.release.outputs.tag_name }}
 
-      - name: Set up Java
+      - name: Setup mise for build
         if: ${{ steps.release.outputs.release_created }}
-        uses: actions/setup-java@v4
+        uses: jdx/mise-action@v2
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          cache: true
 
       - name: Build Release
         if: ${{ steps.release.outputs.release_created }}
         run: |
-          ./gradlew clean build
+          mise exec -- gradle clean build
           ls -lh build/libs/
 
       - name: Upload Release Assets
