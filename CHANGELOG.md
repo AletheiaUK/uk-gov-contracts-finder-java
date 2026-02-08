@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.0.0 (2026-02-08)
+
+
+### Features
+
+* bootstrap UK Government Contracts Finder Java library ([b1939f3](https://github.com/AletheiaUK/uk-gov-contracts-finder-java/commit/b1939f32b07ec96fc1e8c7dbd2b8e4d6aa22afe1))
+
+
+### Documentation
+
+* add mise-en-place GitHub Actions integration guide ([e639223](https://github.com/AletheiaUK/uk-gov-contracts-finder-java/commit/e6392233d621e6cb8f7e6a90224e3e20101983f7))
+* add pull request test workflow documentation ([ac7ed3a](https://github.com/AletheiaUK/uk-gov-contracts-finder-java/commit/ac7ed3aaa79ead6066d84d597a3240a4fffd4d72))
+* add release configuration summary ([45c9e87](https://github.com/AletheiaUK/uk-gov-contracts-finder-java/commit/45c9e8713e1bee4953e5f267d7eb23b46c88e010))
+
 ## [Unreleased]
 
 ## [0.1.0] - 2026-02-08
